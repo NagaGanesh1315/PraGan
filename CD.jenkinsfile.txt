@@ -1,0 +1,46 @@
+pipeline {
+    agent any
+    environment {
+        KUBECONFIG = "/path/to/helm" //Helm is used as a repository to store versions of your cluster
+        CLUSTER_NAME = "eks-cluster-name"
+        IMAGE_NAME = "harbor.com/folder1/my-py-app:latest"
+    }
+    stages {
+        stage('Terraform Init') {
+            steps {
+                script {
+                    // Initializes the Terraform environment for EKS
+                    sh 'terraform init'
+                }
+            }
+        }
+        stage('Terraform Plan') {
+            steps {
+                script {
+                    // You can see changes, without actually changing
+                    sh 'terraform plan'
+                }
+            }
+        }
+        stage('Terraform Apply') {
+            steps {
+                script {
+                    // Applies the Terraform changes to provision/update EKS
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    // Setting the Kubernetes context
+                    sh 'aws eks --region us-west-2 update-helm --name $CLUSTER_NAME'
+
+                    // Deploying the app to Kubernetes using kubectl commands
+                    sh 'kubectl set image deployment/my-py-app my-py-app=$IMG-NAME'
+                    sh 'kubectl rollout status deployment/my-py-app'
+                }
+            }
+        }
+    }
+}

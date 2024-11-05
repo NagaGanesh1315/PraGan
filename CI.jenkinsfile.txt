@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+    environment {
+        REGISTRY = "harbor.com"
+        IMAGE_NAME = "my-py-app"
+        TAG = "latest"
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                // Pull the latest code from Source Code Management. You can give your GitHub branch URL in SCM for pipeline
+                checkout scm
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build the Docker image
+                    sh 'docker build -t $REGISTRY/$IMG-NAME:$TAG .'
+                }
+            }
+        }
+        stage('Push Docker Image to your Registry') {
+            steps {
+                script {
+                    // Login to Registry (Harbor) and push the container image
+                    sh "docker login $REGISTRY -u username -p password"
+                    sh "docker push $REGISTRY/$IMG-NAME:$TAG"
+                }
+            }
+        }
+        stage('Clean Up') {
+            steps {
+                // Optional step, remove the local image after push
+                sh "docker rmi $REGISTRY/$IMAGE_NAME:$TAG"
+            }
+        }
+    }
+}
